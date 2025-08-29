@@ -3,10 +3,11 @@ import { CurrencyInputComponent } from './shared/currency-input/currency-input.c
 import { Currency, CurrencyPair, CurrencyService } from './shared/services/currency.service';
 import { debounceTime, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { DatePipe } from '@angular/common';
 
 @Component({
-  selector: 'app-root',
-  imports: [CurrencyInputComponent],
+  selector: 'sct-root',
+  imports: [CurrencyInputComponent, DatePipe],
   templateUrl: './app.component.html',
   standalone: true,
   styleUrl: './app.component.scss',
