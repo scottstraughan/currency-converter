@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { Currency } from '../services/currency.service';
 import { FormsModule } from '@angular/forms';
+import { Currency } from '../models/currency';
 
 @Component({
   selector: 'sct-currency-input',
@@ -13,7 +13,14 @@ import { FormsModule } from '@angular/forms';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CurrencyInputComponent {
+  /**
+   * Input for the current to handle.
+   */
   readonly currency = input.required<Currency>();
+
+  /**
+   * Output to notify consumers of changes to the value.
+   */
   readonly valueChanged = output<Currency>();
 
   /**

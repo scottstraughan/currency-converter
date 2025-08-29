@@ -2,30 +2,34 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, delay, map, Observable, take, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { Currency, CurrencyPair } from '../models/currency';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CurrencyService {
-  public static DEFAULT_CURRENCY_PAIR = {
-    from: {
-      symbol: '$',
-      name: 'USD',
-      value: 6239.21,
-    },
-    to: {
-      symbol: '£',
-      name: 'GBP',
-      value: 0,
-    }
-  };
+  /**
+   * Default currency pair, loaded from environments.
+   */
+  public static DEFAULT_CURRENCY_PAIR = environment.defaultCurrencyPair;
 
+  /**
+   * Current currency pair subject.
+   * @private
+   */
   private currencyPair$: BehaviorSubject<CurrencyPair>
-    = new BehaviorSubject<CurrencyPair>(CurrencyService.DEFAULT_CURRENCY_PAIR);
+    = new BehaviorSubject<CurrencyPair>(environment.defaultCurrencyPair);
 
+  /**
+   * Checking subject.
+   * @private
+   */
   private checking$: BehaviorSubject<boolean>
     = new BehaviorSubject<boolean>(true);
 
+  /**
+   * Constructor.
+   */
   constructor(
     private httpClient: HttpClient
   ) {
@@ -35,14 +39,23 @@ export class CurrencyService {
       .subscribe()
   }
 
+  /**
+   * Observe changes to the current currency pair.
+   */
   observeCurrencyPair(): Observable<CurrencyPair> {
     return this.currencyPair$.asObservable();
   }
 
+  /**
+   * Observe changes to if we are checking for currency values or not.
+   */
   observeChecking(): Observable<boolean> {
     return this.checking$.asObservable();
   }
 
+  /**
+   * The 'from' value has changed, updated the 'to' currency.
+   */
   fromValueUpdated() {
     const currentPair = this.currencyPair$.value;
 
@@ -55,6 +68,9 @@ export class CurrencyService {
       )
   }
 
+  /**
+   * The 'to' value has changed, updated the 'from' currency.
+   */
   toValueUpdated() {
     const currentPair = this.currencyPair$.value;
 
@@ -67,6 +83,10 @@ export class CurrencyService {
       )
   }
 
+  /**
+   * Fetch the latest version value from the backend.
+   * @private
+   */
   private fetchConvertedCurrencyRate(
     from: Currency,
     to: Currency
@@ -91,18 +111,10 @@ export class CurrencyService {
   }
 }
 
-export type Currency = {
-  name: string
-  symbol: string
-  value?: number
-}
 
-export type CurrencyPair = {
-  from: Currency
-  to: Currency
-  updated?: Date
-}
-
+/**
+ * An API response from the backend.
+ */
 type ApiResult = {
   amount: number
   base: string
