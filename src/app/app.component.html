@@ -5,10 +5,18 @@
   </div>
   <div class="contents">
     <div class="from">
-        <sct-currency-input class="from-currency" [value]="21.20" [currency]="testCurrency"></sct-currency-input>
+        <sct-currency-input
+            class="from-currency"
+            (valueChanged)="onFromCurrencyValueChanged($event)"
+            [currency]="currencyPair().from"></sct-currency-input>
+
+      {{ currencyPair().to.value}}
     </div>
     <div class="to">
-      <sct-currency-input class="to-currency" [value]="21.20" [currency]="testCurrency"></sct-currency-input>
+      <sct-currency-input
+          class="to-currency"
+          (valueChanged)="onToCurrencyValueChanged($event)"
+          [currency]="currencyPair().to"></sct-currency-input>
     </div>
   </div>
   <div class="footer">
