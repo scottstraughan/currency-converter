@@ -2,10 +2,9 @@
   <div class="symbol">{{ currency().symbol }}</div>
 
   <input class="value"
-         type="number"
+         [value]="currency().value"
          (keydown)="onKeyDown($event)"
-         [(ngModel)]="currency().value"
-         (ngModelChange)="onValueChanged()" />
+         (input)="onValueChanged($event)" />
 </div>
 
 <div class="currency">

@@ -1,6 +1,6 @@
 export const environment = {
   apiEndpoint: 'https://api.frankfurter.app/latest',
-  default: {
+  defaultCurrencyPair: {
     from: {
       symbol: '$',
       name: 'USD',

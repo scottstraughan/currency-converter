@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, delay, map, Observable, take, tap } from 'rxjs';
+import { BehaviorSubject, delay, map, Observable, of, take, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Currency, CurrencyPair } from '../models/currency';
 
@@ -18,7 +18,7 @@ export class CurrencyService {
    * @private
    */
   private currencyPair$: BehaviorSubject<CurrencyPair>
-    = new BehaviorSubject<CurrencyPair>(environment.defaultCurrencyPair);
+    = new BehaviorSubject<CurrencyPair>(CurrencyService.DEFAULT_CURRENCY_PAIR);
 
   /**
    * Checking subject.
@@ -59,6 +59,11 @@ export class CurrencyService {
   fromValueUpdated() {
     const currentPair = this.currencyPair$.value;
 
+    if (currentPair.from.value == 0) {
+      this.currencyPair$.next({ ...currentPair, to: { ...currentPair.to, value: 0 }});
+      return of();
+    }
+
     return this.fetchConvertedCurrencyRate(currentPair.from, currentPair.to)
       .pipe(
         tap(() =>
@@ -73,6 +78,11 @@ export class CurrencyService {
    */
   toValueUpdated() {
     const currentPair = this.currencyPair$.value;
+
+    if (currentPair.to.value == 0) {
+      this.currencyPair$.next({ ...currentPair, from: { ...currentPair.from, value: 0 }});
+      return of();
+    }
 
     return this.fetchConvertedCurrencyRate(currentPair.to, currentPair.from)
       .pipe(
@@ -96,7 +106,7 @@ export class CurrencyService {
     const params = new HttpParams()
       .set('from', from.name)
       .set('to', to.name)
-      .set('amount', fromValue);
+      .set('amount', parseInt(fromValue.toString()));
 
     this.checking$.next(true);
 

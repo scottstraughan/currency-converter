@@ -54,9 +54,28 @@ export class CurrencyInputComponent {
   }
 
   /**
-   * Called when the input value has changed, emits to observers.
+   * Called when the input value has changed.
    */
-  onValueChanged() {
+  onValueChanged(
+    event: any
+  ) {
+    const input = event.target as HTMLInputElement;
+    this.currency().value= CurrencyInputComponent.processValue(input.value);
+
     this.valueChanged.emit(this.currency());
+  }
+
+  /**
+   * Ensure the value is valid.
+   * @private
+   */
+  private static processValue(
+    value: any
+  ) {
+    if (value == null || value == '' || value == undefined) {
+      return 0;
+    }
+
+    return parseInt(value.toString());
   }
 }
