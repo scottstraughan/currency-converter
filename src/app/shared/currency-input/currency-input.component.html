@@ -9,5 +9,5 @@
 </div>
 
 <div class="currency">
-  <img [src]="currency().flag" alt="{{ currency().name }} Icon" />
+  <img [src]="'./images/' + currency().name.toLowerCase() + '.svg'" alt="{{ currency().name }} Icon" />
 </div>
