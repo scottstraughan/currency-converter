@@ -28,6 +28,11 @@
       .title,
       .updated {
         flex: 1;
+        padding: 1rem 0;
+      }
+
+      .title {
+        font-size: 1.2rem;
       }
 
       .updated {
@@ -45,19 +50,30 @@
       .to,
       .from {
         flex: 1;
+        padding: 4rem;
       }
 
       .to {
-
+        background-color: white;
       }
 
-      .from {
-        background-color: white;
+      .to .to-currency {
+        --sct-background-color: #e9e9e9;
+      }
+
+      .currency-input {
+        border: #ccc 1px solid;
+        padding: 1rem;
+        width: 100%;
+        background-color: red;
+        border-radius: 12px;
+        font-size: 2rem;
       }
     }
 
     .footer {
       background-color: #372073;
+      color: rgba(255, 255, 255, .4);
     }
   }
 }

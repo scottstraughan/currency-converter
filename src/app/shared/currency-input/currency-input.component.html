@@ -1,0 +1,8 @@
+<div class="input-container">
+  <div class="symbol">{{ currency().symbol }}</div>
+  <input class="value" type="text" [value]="value()" />
+</div>
+
+<div class="currency">
+  <img [src]="currency().flag" alt="{{ currency().name }} Icon" />
+</div>
