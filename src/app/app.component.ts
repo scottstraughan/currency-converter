@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, Signal } from '@angular/core';
 import { CurrencyInputComponent } from './shared/currency-input/currency-input.component';
 import { Currency, CurrencyPair, CurrencyService } from './shared/services/currency.service';
-import { debounceTime, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
+import { debounceTime, Subject, switchMap, takeUntil } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 
@@ -14,8 +14,6 @@ import { DatePipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent implements OnDestroy{
-  title = 'currency-converter';
-
   private static DEBOUNCE_TIME = 200;
 
   readonly currencyPair: Signal<CurrencyPair>;

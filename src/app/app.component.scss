@@ -1,4 +1,6 @@
 :host {
+  --theme-color-primary: #6238cb;
+
   display: flex;
   width: 100vw;
   height: 100vh;
@@ -10,7 +12,7 @@
 
     width: 600px;
     height: 600px;
-    background-color: #6238cb;
+    background-color: var(--theme-color-primary);
     border-radius: 15px;
     overflow: hidden;
     display: flex;
@@ -55,6 +57,46 @@
 
       .to {
         background-color: white;
+        position: relative;
+
+        .indicator {
+          top: -40px;
+          left: 50%;
+          width: 80px;
+          height: 80px;
+          transform: translateX(-50%);
+          background-color: var(--theme-color-primary);
+          border-radius: 100%;
+          position: absolute;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+
+          img {
+            width: 100%;
+            height: auto;
+            position: relative;
+            opacity: .6;
+
+            @keyframes checking {
+              0% {
+                transform: rotate(0);
+              }
+              50% {
+                transform: rotate(180deg);
+              }
+              100% {
+                transform: rotate(360deg);
+              }
+            }
+          }
+
+          &.checking img {
+            animation: checking 1s linear infinite;
+            opacity: 1;
+          }
+        }
       }
 
       .to .to-currency {

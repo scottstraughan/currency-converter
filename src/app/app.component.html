@@ -11,6 +11,10 @@
             [currency]="currencyPair().from"></sct-currency-input>
     </div>
     <div class="to">
+      <div class="indicator checking">
+        <img src="./images/checking.svg" alt="Checking" />
+      </div>
+
       <sct-currency-input
           class="to-currency"
           (valueChanged)="onToCurrencyValueChanged($event)"
