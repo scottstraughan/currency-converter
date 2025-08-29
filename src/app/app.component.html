@@ -1,7 +1,7 @@
 <div class="container">
   <div class="header">
     <div class="title">Convert Currency</div>
-    <div class="updated">Last Updated</div>
+    <div class="updated">Updated {{ currencyPair().updated | date: 'short'}}</div>
   </div>
   <div class="contents">
     <div class="from">
@@ -9,8 +9,6 @@
             class="from-currency"
             (valueChanged)="onFromCurrencyValueChanged($event)"
             [currency]="currencyPair().from"></sct-currency-input>
-
-      {{ currencyPair().to.value}}
     </div>
     <div class="to">
       <sct-currency-input
