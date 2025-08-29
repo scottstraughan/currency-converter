@@ -17,6 +17,7 @@ export class AppComponent implements OnDestroy{
   private static DEBOUNCE_TIME = 200;
 
   readonly currencyPair: Signal<CurrencyPair>;
+  readonly isChecking: Signal<boolean>;
 
   private fromCurrencyValueChangeSubject = new Subject<Currency>();
   private toCurrencyValueChangeSubject = new Subject<Currency>();
@@ -27,6 +28,9 @@ export class AppComponent implements OnDestroy{
   ) {
     this.currencyPair = toSignal(
       currencyService.observeCurrencyPair(), { initialValue: CurrencyService.DEFAULT_CURRENCY_PAIR });
+
+    this.isChecking = toSignal(
+      currencyService.observeChecking(), { initialValue: true });
 
     this.fromCurrencyValueChangeSubject
       .pipe(

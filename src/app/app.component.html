@@ -11,7 +11,7 @@
             [currency]="currencyPair().from"></sct-currency-input>
     </div>
     <div class="to">
-      <div class="indicator checking">
+      <div class="indicator" [class.checking]="isChecking()">
         <img src="./images/checking.svg" alt="Checking" />
       </div>
 

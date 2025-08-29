@@ -1,13 +1,12 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, map, Observable, take, tap } from 'rxjs';
+import { BehaviorSubject, delay, map, Observable, take, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CurrencyService {
-  private static endpoint = 'https://api.frankfurter.app/latest';
-
   public static DEFAULT_CURRENCY_PAIR = {
     from: {
       symbol: '$',
@@ -24,6 +23,9 @@ export class CurrencyService {
   private currencyPair$: BehaviorSubject<CurrencyPair>
     = new BehaviorSubject<CurrencyPair>(CurrencyService.DEFAULT_CURRENCY_PAIR);
 
+  private checking$: BehaviorSubject<boolean>
+    = new BehaviorSubject<boolean>(true);
+
   constructor(
     private httpClient: HttpClient
   ) {
@@ -35,6 +37,10 @@ export class CurrencyService {
 
   observeCurrencyPair(): Observable<CurrencyPair> {
     return this.currencyPair$.asObservable();
+  }
+
+  observeChecking(): Observable<boolean> {
+    return this.checking$.asObservable();
   }
 
   fromValueUpdated() {
@@ -72,9 +78,15 @@ export class CurrencyService {
       .set('to', to.name)
       .set('amount', fromValue);
 
-    return this.httpClient.get<ApiResult>(CurrencyService.endpoint, { params })
+    this.checking$.next(true);
+
+    return this.httpClient.get<ApiResult>(environment.apiEndpoint, { params })
       .pipe(
-        map(result => result.rates[to.name]),
+        map(result =>
+          result.rates[to.name]),
+        delay(200),
+        tap(() =>
+          this.checking$.next(false))
       );
   }
 }
