@@ -30,7 +30,7 @@ jobs:
 
       - name: Embed API Token
         run: |
-          sed -i "s/CI_API_TOKEN/${{ secrents.CURRENCY_BEACON_API_KEY }}/g" src/environments/environment.ts
+          sed -i "s/CI_API_TOKEN/${{ secrets.CURRENCY_BEACON_API_KEY }}/g" src/environments/environment.ts
 
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
