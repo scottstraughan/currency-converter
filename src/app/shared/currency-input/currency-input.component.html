@@ -1,12 +1,35 @@
-<div class="input-container">
-  <div class="symbol">{{ currency().symbol }}</div>
+<div class="input-container"
+     [class.loading]="currency() == undefined">
+  @if (currency(); as currency) {
+    <div class="symbol">{{ currency.symbol }}</div>
 
-  <input class="value"
-         [value]="currency().value"
-         (keydown)="onKeyDown($event)"
-         (input)="onValueChanged($event)" />
+    <input class="value"
+           [value]="currency.value ? currency.value : ''"
+           placeholder="----"
+           (keydown)="onKeyDown($event)"
+           (input)="onValueChanged(currency, $event)" />
+  }
 </div>
 
-<div class="currency">
-  <img [src]="'./images/' + currency().name.toLowerCase() + '.svg'" alt="{{ currency().name }} Icon" />
+<div class="currency"
+     [class.active]="isShowingCurrencySelect()"
+     (click)="onToggleCurrencySelector($event)"
+     [class.loading]="currency() == undefined">
+
+  @if (currency(); as currency) {
+    <img [src]="getCurrencyFlagSrc(currency)" alt="{{ currency.name }} Icon" />
+  }
+
+  @if (isShowingCurrencySelect()) {
+    <div class="currencies">
+      <ol>
+        @for (currency of currencies(); track $index) {
+          <li (click)="onSelectCurrency($event, currency)">
+            <img [src]="getCurrencyFlagSrc(currency)" alt="{{ currency.name }} Icon" />
+            {{ currency.name }} ({{ currency.symbol }})
+          </li>
+        }
+      </ol>
+    </div>
+  }
 </div>

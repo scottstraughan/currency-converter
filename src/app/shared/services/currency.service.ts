@@ -1,135 +1,194 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, delay, map, Observable, of, take, tap } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { Currency, CurrencyPair } from '../models/currency';
+import { BehaviorSubject, map, Observable, of, take, tap } from 'rxjs';
+import { Currency } from '../models/currency';
+import { CurrencyBeaconService } from './backends/currency-beacon.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CurrencyService {
   /**
-   * Default currency pair, loaded from environments.
-   */
-  public static DEFAULT_CURRENCY_PAIR = environment.defaultCurrencyPair;
-
-  /**
-   * Current currency pair subject.
+   * Observe the supported currency pairs.
    * @private
    */
-  private currencyPair$: BehaviorSubject<CurrencyPair>
-    = new BehaviorSubject<CurrencyPair>(CurrencyService.DEFAULT_CURRENCY_PAIR);
+  private currencies$: BehaviorSubject<Currency[]> = new BehaviorSubject<any>([]);
 
   /**
-   * Checking subject.
+   * Observable to track if we are converting or not.
    * @private
    */
-  private checking$: BehaviorSubject<boolean>
-    = new BehaviorSubject<boolean>(true);
+  private isConverting$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+
+  /**
+   * Observable to track if we are loading currencies or not.
+   * @private
+   */
+  private isLoadingCurrencies$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
+
+  /**
+   * Observable for the 'from' currency.
+   * @private
+   */
+  private fromCurrency: BehaviorSubject<Currency | undefined> = new BehaviorSubject<any>(undefined);
+
+  /**
+   * Observable for the 'to' currency.
+   * @private
+   */
+  private toCurrency: BehaviorSubject<Currency | undefined> = new BehaviorSubject<any>(undefined);
+
+  /**
+   * Observable for last update Date.
+   * @private
+   */
+  private lastUpdateDate: BehaviorSubject<Date | undefined> = new BehaviorSubject<any>(undefined);
 
   /**
    * Constructor.
    */
   constructor(
-    private httpClient: HttpClient
+    private currencyBeaconService: CurrencyBeaconService
   ) {
-    // Load an initial value
-    this.fromValueUpdated()
-      .pipe(take(1))
-      .subscribe()
+    this.loadCurrencyPairs()
+      .pipe(
+        tap(() => {
+          this.fromCurrency.next(this.currencies$.value[48])
+          this.toCurrency.next(this.currencies$.value[146])
+        })
+      )
+      .subscribe();
+
   }
 
   /**
-   * Observe changes to the current currency pair.
+   * Observe currencies.
    */
-  observeCurrencyPair(): Observable<CurrencyPair> {
-    return this.currencyPair$.asObservable();
+  observeCurrencies(): Observable<Currency[]> {
+    return this.currencies$.asObservable();
+  }
+
+  /**
+   * Observe 'from' currency.
+   */
+  observeFromCurrency(): Observable<Currency | undefined> {
+    return this.fromCurrency.asObservable()
+  }
+
+  /**
+   * Observe 'to' currency.
+   */
+  observeToCurrency(): Observable<Currency | undefined> {
+    return this.toCurrency.asObservable()
+  }
+
+  /**
+   * Observe last update date for a conversion.
+   */
+  observeUpdateDate(): Observable<Date | undefined> {
+    return this.lastUpdateDate.asObservable()
   }
 
   /**
    * Observe changes to if we are checking for currency values or not.
    */
   observeChecking(): Observable<boolean> {
-    return this.checking$.asObservable();
+    return this.isConverting$.asObservable();
   }
 
   /**
-   * The 'from' value has changed, updated the 'to' currency.
+   * Observe if we are loading the currencies.
    */
-  fromValueUpdated() {
-    const currentPair = this.currencyPair$.value;
+  observeLoadingCurrencies(): Observable<boolean> {
+    return this.isLoadingCurrencies$.asObservable();
+  }
 
-    if (currentPair.from.value == 0) {
-      this.currencyPair$.next({ ...currentPair, to: { ...currentPair.to, value: 0 }});
-      return of();
+  /**
+   * Update the 'from' currency. Call the API backend and update any required values.
+   */
+  updateFrom(
+    currency: Currency
+  ): Observable<any> {
+    this.fromCurrency.next(currency);
+
+    const fromCurrency = this.fromCurrency.value;
+    const toCurrency = this.toCurrency.value;
+
+    if (!fromCurrency || !toCurrency) {
+      return of(toCurrency);
     }
 
-    return this.fetchConvertedCurrencyRate(currentPair.from, currentPair.to)
+    return this.fetchLatestCurrencyEvaluation(fromCurrency, toCurrency)
       .pipe(
-        tap(() =>
-          currentPair.updated = new Date()),
         tap(value =>
-          this.currencyPair$.next({ ...currentPair, to: { ...currentPair.to, value }}))
+          this.toCurrency.next(value)),
+        take(1),
       )
   }
 
   /**
-   * The 'to' value has changed, updated the 'from' currency.
+   * Update the 'to' currency. Call the API backend and update any required values.
    */
-  toValueUpdated() {
-    const currentPair = this.currencyPair$.value;
+  updateTo(
+    currency: Currency
+  ) {
+    this.toCurrency.next(currency);
 
-    if (currentPair.to.value == 0) {
-      this.currencyPair$.next({ ...currentPair, from: { ...currentPair.from, value: 0 }});
-      return of();
+    const fromCurrency = this.toCurrency.value;
+    const toCurrency = this.fromCurrency.value;
+
+    if (!fromCurrency || !toCurrency) {
+      return of(fromCurrency);
     }
 
-    return this.fetchConvertedCurrencyRate(currentPair.to, currentPair.from)
+    return this.fetchLatestCurrencyEvaluation(fromCurrency, toCurrency)
       .pipe(
-        tap(() =>
-          currentPair.updated = new Date()),
         tap(value =>
-          this.currencyPair$.next({ ...currentPair, from: { ...currentPair.from, value }}))
+          this.fromCurrency.next(value)),
+        take(1),
       )
   }
 
   /**
-   * Fetch the latest version value from the backend.
+   * Fetch the latest currency evaluation.
    * @private
    */
-  private fetchConvertedCurrencyRate(
+  private fetchLatestCurrencyEvaluation(
     from: Currency,
     to: Currency
-  ): Observable<number> {
-    const fromValue = from.value != undefined ? from.value : 0;
+  ): Observable<Currency> {
+    this.isConverting$.next(true);
 
-    const params = new HttpParams()
-      .set('from', from.name)
-      .set('to', to.name)
-      .set('amount', parseInt(fromValue.toString()));
-
-    this.checking$.next(true);
-
-    return this.httpClient.get<ApiResult>(environment.apiEndpoint, { params })
+    return this.currencyBeaconService.convertCurrencyAmount(from, to)
       .pipe(
-        map(result =>
-          result.rates[to.name]),
-        delay(200),
+        map(response => {
+          to.value = parseFloat(Number(response.value).toFixed(2));
+          return to;
+        }),
         tap(() =>
-          this.checking$.next(false))
-      );
+          this.isConverting$.next(false)),
+        tap(() =>
+          this.lastUpdateDate.next(new Date())),
+      )
   }
-}
 
+  /**
+   * Load the supported currencies.
+   * @private
+   */
+  private loadCurrencyPairs(): Observable<Currency[]> {
+    this.isLoadingCurrencies$.next(true);
 
-/**
- * An API response from the backend.
- */
-type ApiResult = {
-  amount: number
-  base: string
-  date: string
-  rates: {
-    [currency: string]: number;
+    return this.currencyBeaconService.getSupportedCurrencies()
+      .pipe(
+        map(response =>
+          Object.values(response.response).map(currencyResponse => <Currency> {
+            name: currencyResponse.short_code,
+            symbol: currencyResponse.symbol,
+          })),
+        tap(currencies =>
+          this.currencies$.next(currencies)),
+        tap(() =>
+          this.isLoadingCurrencies$.next(false))
+      )
   }
 }

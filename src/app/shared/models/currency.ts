@@ -6,12 +6,3 @@ export type Currency = {
   symbol: string
   value?: number
 }
-
-/**
- * A currency pair type.
- */
-export type CurrencyPair = {
-  from: Currency
-  to: Currency
-  updated?: Date
-}

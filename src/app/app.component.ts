@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, Signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, signal, Signal, WritableSignal } from '@angular/core';
 import { CurrencyInputComponent } from './shared/currency-input/currency-input.component';
 import { CurrencyService } from './shared/services/currency.service';
-import { debounceTime, Subject, switchMap, takeUntil } from 'rxjs';
+import { debounceTime, map, Subject, switchMap, takeUntil, tap } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
-import { Currency, CurrencyPair } from './shared/models/currency';
+import { Currency } from './shared/models/currency';
 
 @Component({
   selector: 'sct-root',
@@ -22,14 +22,26 @@ export class AppComponent implements OnDestroy {
   private static DEBOUNCE_TIME = 200;
 
   /**
-   * Signal for the current currency pair.
-   */
-  readonly currencyPair: Signal<CurrencyPair>;
-
-  /**
    * Signal to determine if we are checking or not.
    */
   readonly isChecking: Signal<boolean>;
+
+  /**
+   * Signal to track if we are initializing or not.
+   */
+  readonly isInitializing: Signal<boolean>;
+
+  readonly lastUpdateDate: Signal<Date | undefined>;
+
+  /**
+   * Signal for 'from' currency.
+   */
+  readonly fromCurrency: WritableSignal<Currency | undefined> = signal(undefined);
+
+  /**
+   * Signal for 'to' currency.
+   */
+  readonly toCurrency: WritableSignal<Currency | undefined> = signal(undefined);
 
   /**
    * Subject to track changes to the 'from' currency component.
@@ -49,22 +61,50 @@ export class AppComponent implements OnDestroy {
    */
   private onDestroySubject: Subject<void> = new Subject();
 
+  static rebuildUpdatedCurrency(
+    currency: Currency | undefined
+  ) {
+    return currency == undefined ? undefined : <Currency> {
+      name: currency.name,
+      value: currency.value,
+      symbol: currency.symbol,
+    };
+  }
+
   /**
    * Constructor.
    */
   constructor(
     private currencyService: CurrencyService,
   ) {
-    this.currencyPair = toSignal(
-      currencyService.observeCurrencyPair(), { initialValue: CurrencyService.DEFAULT_CURRENCY_PAIR });
+    this.currencyService.observeFromCurrency()
+      .pipe(
+        map(from => AppComponent.rebuildUpdatedCurrency(from)),
+        tap(currency => this.fromCurrency.set(currency)),
+        takeUntil(this.onDestroySubject)
+      )
+      .subscribe()
+
+    this.currencyService.observeToCurrency()
+      .pipe(
+        map(to => AppComponent.rebuildUpdatedCurrency(to)),
+        tap(currency => this.toCurrency.set(currency)),
+        takeUntil(this.onDestroySubject)
+      )
+      .subscribe()
+
+    this.lastUpdateDate = toSignal(currencyService.observeUpdateDate(), { initialValue: undefined })
 
     this.isChecking = toSignal(
-      currencyService.observeChecking(), { initialValue: true });
+      currencyService.observeChecking(), { initialValue: false });
+
+    this.isInitializing = toSignal(
+      currencyService.observeLoadingCurrencies(), { initialValue: true });
 
     this.fromCurrencyValueChangeSubject
       .pipe(
         debounceTime(AppComponent.DEBOUNCE_TIME),
-        switchMap(() => this.currencyService.fromValueUpdated()),
+        switchMap(value => this.currencyService.updateFrom(value)),
         takeUntil(this.onDestroySubject),
       )
       .subscribe();
@@ -72,28 +112,10 @@ export class AppComponent implements OnDestroy {
     this.toCurrencyValueChangeSubject
       .pipe(
         debounceTime(AppComponent.DEBOUNCE_TIME),
-        switchMap(() => this.currencyService.toValueUpdated()),
+        switchMap(value => this.currencyService.updateTo(value)),
         takeUntil(this.onDestroySubject)
       )
       .subscribe();
-  }
-
-  /**
-   * Called when the 'from' currency component has changed value, fires immediately.
-   */
-  onFromCurrencyValueChanged(
-    value: Currency
-  ) {
-    this.fromCurrencyValueChangeSubject.next(value);
-  }
-
-  /**
-   * Called when the 'to' currency component has changed value, fires immediately.
-   */
-  onToCurrencyValueChanged(
-    value: Currency
-  ) {
-    this.toCurrencyValueChangeSubject.next(value);
   }
 
   /**
@@ -102,5 +124,23 @@ export class AppComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.onDestroySubject.next();
     this.onDestroySubject.complete();
+  }
+
+  /**
+   * Called when the 'from' currency value has changed.
+   */
+  onFromCurrencyChanged(
+    from: Currency
+  ) {
+    this.fromCurrencyValueChangeSubject.next(from);
+  }
+
+  /**
+   * Called when the 'to' currency value has changed.
+   */
+  onToCurrencyChanged(
+    to: Currency
+  ) {
+    this.toCurrencyValueChangeSubject.next(to);
   }
 }

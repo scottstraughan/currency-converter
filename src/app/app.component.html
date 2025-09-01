@@ -1,24 +1,32 @@
 <div class="container">
   <div class="header">
     <div class="title">Convert Currency</div>
-    <div class="updated">Updated {{ currencyPair().updated | date: 'short'}}</div>
+    <div class="updated">
+      @if (isInitializing()) {
+        Loading Currencies...
+      } @else {
+        @if (lastUpdateDate(); as lastUpdateDate) {
+          Updated {{ lastUpdateDate | date: 'short'}}
+        }
+      }
+    </div>
   </div>
   <div class="contents">
     <div class="from">
         <sct-currency-input
             class="from-currency"
-            (valueChanged)="onFromCurrencyValueChanged($event)"
-            [currency]="currencyPair().from"></sct-currency-input>
+            [currency]="fromCurrency()"
+            (currencyChanged)="onFromCurrencyChanged($event)"></sct-currency-input>
     </div>
     <div class="to">
-      <div class="indicator" [class.checking]="isChecking()">
+      <div class="indicator" [class.checking]="isChecking() || isInitializing()">
         <img src="./images/checking.svg" alt="Checking" />
       </div>
 
       <sct-currency-input
           class="to-currency"
-          (valueChanged)="onToCurrencyValueChanged($event)"
-          [currency]="currencyPair().to"></sct-currency-input>
+          [currency]="toCurrency()"
+          (currencyChanged)="onToCurrencyChanged($event)"></sct-currency-input>
     </div>
   </div>
   <div class="footer">
