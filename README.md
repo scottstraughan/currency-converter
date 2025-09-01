@@ -7,11 +7,9 @@ Simple currency converter!
 - Uses the https://api.frankfurter.app/latest endpoint for conversion requests
 - Based on Angular
 
-## Possible Todos
+## Testing Local
 
-- Handle errors on from the conversion endpoint
-- Spinner could work a bit more elegantly 
-- Clicking a flag should allow the user to change the to/from currency
+You can run `ng serve` on the project root assuming you have angular-cli and npm installed.
 
 ## Licence
 
